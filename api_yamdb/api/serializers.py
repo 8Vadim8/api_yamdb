@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -34,6 +35,13 @@ class TitlePostSerializer(serializers.ModelSerializer):
             "category",
             "genre",
         )
+
+    def validate_year(self, value):
+        if not (0 < value <= timezone.now().year):
+            raise serializers.ValidationError(
+                'Год произведения не может быть из будущего'
+            )
+        return value
 
 
 class TitlesSerializer(serializers.ModelSerializer):
