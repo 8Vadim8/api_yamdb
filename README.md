@@ -10,6 +10,12 @@
 
 Обязательно: заполнение описания проекта в файле README.md.
 
+## Технологии
+- Python 3.2
+- Django 2.2
+- DRF
+- JWT
+
 ## Техническое описание проекта YaMDb.
 Проект YaMDb собирает отзывы (Review) пользователей на произведения (Titles).
 
@@ -79,6 +85,12 @@ source venv/Scripts/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+Cоздать файл .env и прописать SECRET_KEY
+```
+echo "SECRET_KEY=YourSecretKey" > .env
+```
+Секретный ключ Джанго можно сгенерировать [здесь](https://djecrety.ir)
+
 Выполнить миграции:
 ```
 cd api_yamdb
