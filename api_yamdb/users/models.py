@@ -1,10 +1,11 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
-
+VALID_NAME = RegexValidator(r'^[\w.@+-]+\Z')
 
 class User(AbstractUser):
     ROLES = {
@@ -14,6 +15,7 @@ class User(AbstractUser):
     }
     username = models.CharField(
         'Имя пользователя',
+        validators=[VALID_NAME],
         max_length=150,
         unique=True,
     )
@@ -45,6 +47,9 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
+
+    class Meta:
+        ordering = ['id']
 
     def __str__(self):
         return str(self.username)

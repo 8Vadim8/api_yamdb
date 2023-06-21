@@ -23,7 +23,7 @@ class Category(models.Model):
 class Genre(models.Model):
     name = models.CharField(max_length=200, verbose_name="Жанр")
     slug = models.SlugField(
-        max_length=100, blank=True, unique=True, verbose_name="slug жанра"
+        max_length=50, blank=True, unique=True, verbose_name="slug жанра"
     )
 
     class Meta:

@@ -1,6 +1,5 @@
-from uuid import uuid4
-
 from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,6 +8,8 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+from uuid import uuid4
+
 
 from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from reviews.models import Category, Genre, Review, Title
@@ -28,6 +29,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = "username"
     filter_backends = (filters.SearchFilter,)
     search_fields = ("username",)
@@ -59,20 +61,25 @@ class UsersViewSet(viewsets.ModelViewSet):
 def create_user(request):
     serializer = RegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data.get("username")
-    email = serializer.validated_data.get("email")
-    real_username = User.objects.filter(username=username)
-    real_email = User.objects.filter(email=email)
-    if real_username.exists() or real_email.exists():
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
-    user = User.objects.create_user(username=username, email=email)
-    user.confirmation_code = uuid4()
+    try:
+        user, created = User.objects.get_or_create(
+            username=serializer.validated_data['username'],
+            email=serializer.validated_data['email']
+        )
+    except IntegrityError:
+        return Response(
+            f'Такой email или имя уже заняты! Выберете другое!',
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    if created:
+        user.is_active = False
+    user.confirmation_code = uuid4().hex
     user.save()
     send_mail(
-        "Ваш код подтверждения:",
-        f"{user.confirmation_code}",
+        "Подтвердите регистрацию",
+        f"Ваш код подтверждения: {user.confirmation_code}",
         DEFAULT_FROM_EMAIL,
-        [f"{email}"],
+        [user.email],
     )
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -85,6 +92,8 @@ def create_token(request):
     confirmation_code = serializer.validated_data.get("confirmation_code")
     user = get_object_or_404(User, username=username)
     if confirmation_code == user.confirmation_code:
+        user.is_active = True
+        user.save()
         token = AccessToken.for_user(user)
         return Response({"token": f"{token}"}, status=status.HTTP_200_OK)
     return Response(

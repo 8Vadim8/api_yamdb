@@ -121,7 +121,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegistrationSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(max_length=254, required=True)
     username = serializers.RegexField(
         regex=r"^[\w.@+-]+$", max_length=150, required=True
     )
