@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
@@ -8,12 +10,11 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from uuid import uuid4
-
-
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
+
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
+
 from .filitres import TitleFilter
 from .mixins import CreateListDestroyViewSet
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
@@ -43,9 +44,6 @@ class UsersViewSet(viewsets.ModelViewSet):
     )
     def get_user(self, request, pk=None):
         user = get_object_or_404(User, pk=request.user.id)
-        if request.method == "GET":
-            serializer = self.get_serializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == "PATCH":
             serializer = self.get_serializer(
                 user,
@@ -55,6 +53,8 @@ class UsersViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save(role=user.role)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -68,7 +68,7 @@ def create_user(request):
         )
     except IntegrityError:
         return Response(
-            f'Такой email или имя уже заняты! Выберете другое!',
+            'Такой email или имя уже заняты! Выберете другой!',
             status=status.HTTP_400_BAD_REQUEST
         )
     if created:
@@ -141,10 +141,11 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action in ('list', 'retrieve'):
-            queryset = (Title.objects.prefetch_related('reviews').all().
-                        annotate(rating=Avg('reviews__score')).
-                        order_by('name'))
-            return queryset
+            return (
+                Title.objects.prefetch_related('reviews').all().
+                annotate(rating=Avg('reviews__score')).
+                order_by('name')
+            )
         return Title.objects.all()
 
 

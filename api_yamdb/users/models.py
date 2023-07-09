@@ -7,6 +7,7 @@ MODERATOR = 'moderator'
 USER = 'user'
 VALID_NAME = RegexValidator(r'^[\w.@+-]+\Z')
 
+
 class User(AbstractUser):
     ROLES = {
         (ADMIN, 'admin'),
